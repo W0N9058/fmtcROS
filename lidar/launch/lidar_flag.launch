@@ -1,0 +1,17 @@
+<launch>
+    <include file="$(find rplidar_ros)/launch/rplidar_a2m12.launch"/>
+
+    <node name="serial_node"        pkg="rosserial_python"      type="serial_node.py">
+    <param name="port"              type="string"               value="/dev/ttyACM0"/>
+    <param name="baud"              type="int"                  value="57600"/>
+    </node>
+
+    <node name="lidar_filter" pkg="laser_filters" type="scan_to_scan_filter_chain">
+        <rosparam command="load" file="$(find lidar)/config/lidar_angle_filter.yaml"/>
+    </node> 
+    <node name="lidar_pub" pkg="lidar" type="lidar_cluster_pub.py">
+        <remap from="scan" to="scan_filtered"/>
+    </node>    
+    <node name="lane_detect_lidar" pkg="lidar" type="lidar_lanechange_flag.py"/>
+    
+</launch>

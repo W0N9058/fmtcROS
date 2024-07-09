@@ -1,0 +1,10 @@
+<launch>
+    <include file="$(find rplidar_ros)/launch/rplidar_a2m12.launch"/>
+    <node name="lidar_angle_filter" pkg="laser_filters" type="scan_to_scan_filter_chain">
+        <rosparam command="load" file="$(find lidar)/config/lidar_angle_filter.yaml"/>
+    </node> 
+    <node name="lidar_pub" pkg="lidar" type="lidar_cluster_pub.py">
+        <remap from="scan" to="scan_filtered"/>
+    </node>    
+    <node name="lidar_sub" pkg="lidar" type="lidar_cluster_sub_rviz.py"/>
+</launch>

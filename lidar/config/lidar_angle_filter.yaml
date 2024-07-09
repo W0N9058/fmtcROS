@@ -1,0 +1,14 @@
+scan_filter_chain:
+- name: AngularBoundsFilter
+  type: laser_filters/LaserScanAngularBoundsFilterInPlace
+  params:
+    lower_angle: -1.5708 # 라디안 단위, 90도 1.5708
+    upper_angle: 1.5708 # 270도 4.7123
+#- name: range
+ # type: laser_filters/LaserScanRangeFilter
+  #params:
+   # use_message_range_limits: false
+    #lower_threshold: 0.15
+    #upper_threshold: 3
+    #lower_replacement_value: -.inf
+    #upper_replacement_value: .inf

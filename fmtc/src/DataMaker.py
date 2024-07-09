@@ -17,7 +17,7 @@ class DataMaker:
         # 카메라 정보 받아오기
         self.image_sub = rospy.Subscriber('/camera/image', Image, self.image_callback)
         # 조향값 정보 받아오기
-        self.int_sub = rospy.Subscriber('/angle_topic', Int32, self.angle_callback)
+        self.int_sub = rospy.Subscriber('/pot_angle', Int32, self.angle_callback)
         
         # 키보드 입력 받아주기
         self.keyboard_pub = rospy.Publisher('/keyboard_input', Int32, queue_size=10)

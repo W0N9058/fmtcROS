@@ -7,8 +7,8 @@
 
 constexpr float BACKMOTOR_MAX = 255.0;
 constexpr float BACKMOTOR_MIN = 0.0;
-constexpr float FRONTMOTOR_MAX = 255.0;
-constexpr float FRONTMOTOR_MIN = 0.0;
+constexpr float FRONTMOTOR_MAX = 800; // potentiometer 값으로 매핑하도록...
+constexpr float FRONTMOTOR_MIN = 115;
 
 // class
 class MyMotorControl {
@@ -42,6 +42,9 @@ void keyCallback(const std_msgs::Float32MultiArray &msg);
 // map function for float input
 int mapFloat(float value, float fromLow, float fromHigh, float toLow, float toHigh);
 
+// 포텐시오미터값 전역변수
+int pot_value = 500;
+
 // ROS NodeHandle
 ros::NodeHandle nh;
 
@@ -74,14 +77,19 @@ void setup() {
   nh.advertise(backward_pub);
   nh.advertise(joy_angle_pub);
   nh.subscribe(key_sub);
+
+  leftMotor.stop();
+  rightMotor.stop();
+  steeringMotor.stop();
+  
 }
 
 void loop() {
   // 포텐시오미터 값 읽기
-  int potValue = analogRead(potPin);
+  pot_value = analogRead(potPin);
   
   // 메시지에 값 설정
-  pot_angle_msg.data = potValue;
+  pot_angle_msg.data = pot_value;
 
   // 메시지 퍼블리시
   pot_angle_pub.publish(&pot_angle_msg);
@@ -134,18 +142,22 @@ void BackMyMotorControl::back(int power) {
 FrontMyMotorControl::FrontMyMotorControl(int input1, int input2, int pwm)
   : MyMotorControl(input1, input2, pwm) {}
 
-void FrontMyMotorControl::move(int power) {
-  if (power == 0){
-    stop();
-  } else if (power < 0) {
-    digitalWrite(input1, HIGH);
-    digitalWrite(input2, LOW);
-    analogWrite(pwm, abs(power));
-  } else {
+void FrontMyMotorControl::move(int target_angle) {
+  int error_angle = target_angle - pot_value;
+  
+  
+  if (error_angle > 0){ // 좌회전해야하는 상황
     digitalWrite(input1, LOW);
     digitalWrite(input2, HIGH);
-    analogWrite(pwm, abs(power));
+    analogWrite(pwm, abs(255));
+  } else if (error_angle == 0) {
+    stop();
+  } else { // 우회전해야하는 상황
+    digitalWrite(input1, HIGH);
+    digitalWrite(input2, LOW);
+    analogWrite(pwm, abs(255));
   }
+  
 }
 
 
@@ -153,7 +165,7 @@ void FrontMyMotorControl::move(int power) {
 void keyCallback(const std_msgs::Float32MultiArray &msg) {
   int forward = mapFloat(msg.data[0], 1.0, -1.0, BACKMOTOR_MIN, BACKMOTOR_MAX);
   int backward = mapFloat(msg.data[1], 1.0, -1.0, BACKMOTOR_MIN, BACKMOTOR_MAX);
-  int joy_angle = mapFloat(msg.data[2], -1.0, 1.0, -FRONTMOTOR_MAX, FRONTMOTOR_MAX);
+  int joy_angle = mapFloat(msg.data[2], -1.0, 1.0, FRONTMOTOR_MIN, FRONTMOTOR_MAX);
 
   //debugging
 //  pwm_msg.data = [forward, backward, angle];

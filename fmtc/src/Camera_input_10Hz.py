@@ -12,7 +12,7 @@ def image_publisher():
     bridge = CvBridge()
 
     # USB 카메라 열기 (디바이스 인덱스 0 사용)
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(2)
     if not cap.isOpened():
         rospy.logerr("USB 카메라를 열 수 없습니다.")
         return

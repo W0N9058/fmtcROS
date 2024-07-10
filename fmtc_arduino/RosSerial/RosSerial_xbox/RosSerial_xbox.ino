@@ -7,8 +7,8 @@
 
 constexpr float BACKMOTOR_MAX = 255.0;
 constexpr float BACKMOTOR_MIN = 0.0;
-constexpr float FRONTMOTOR_MAX = 255.0;
-constexpr float FRONTMOTOR_MIN = 0.0;
+constexpr float FRONTMOTOR_MAX = 800; // potentiometer 값으로 매핑하도록...
+constexpr float FRONTMOTOR_MIN = 115;
 
 // class
 class MyMotorControl {
@@ -41,6 +41,9 @@ void keyCallback(const std_msgs::Float32MultiArray &msg);
 
 // map function for float input
 int mapFloat(float value, float fromLow, float fromHigh, float toLow, float toHigh);
+
+// 포텐시오미터값 전역변수
+int pot_value = 500;
 
 // ROS NodeHandle
 ros::NodeHandle nh;
@@ -78,7 +81,7 @@ void setup() {
 
 void loop() {
   // 포텐시오미터 값 읽기
-  int potValue = analogRead(potPin);
+  potValue = analogRead(potPin);
   
   // 메시지에 값 설정
   pot_angle_msg.data = potValue;
@@ -134,14 +137,15 @@ void BackMyMotorControl::back(int power) {
 FrontMyMotorControl::FrontMyMotorControl(int input1, int input2, int pwm)
   : MyMotorControl(input1, input2, pwm) {}
 
-void FrontMyMotorControl::move(int power) {
-  if (power == 0){
-    stop();
-  } else if (power < 0) {
+void FrontMyMotorControl::move(int target_angle) {
+  int error_angle = target_angle - pot_value
+  if (error_angle > 0){ // 좌회전해야하는 상황
     digitalWrite(input1, HIGH);
     digitalWrite(input2, LOW);
     analogWrite(pwm, abs(power));
-  } else {
+  } else if (error_angle == 0) {
+    stop()
+  } else { // 우회전해야하는 상황
     digitalWrite(input1, LOW);
     digitalWrite(input2, HIGH);
     analogWrite(pwm, abs(power));

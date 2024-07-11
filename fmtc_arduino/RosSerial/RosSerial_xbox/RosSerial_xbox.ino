@@ -9,6 +9,7 @@ constexpr float BACKMOTOR_MAX = 255.0;
 constexpr float BACKMOTOR_MIN = 0.0;
 constexpr float FRONTMOTOR_MAX = 800; // potentiometer 값으로 매핑하도록...
 constexpr float FRONTMOTOR_MIN = 115;
+constexpr float backmotor_synchro_coeff = 0.9; // 왼쪽 바퀴가 빠른 현상 억제 변수
 
 // class
 class MyMotorControl {
@@ -193,11 +194,13 @@ void keyCallback(const std_msgs::Float32MultiArray &msg) {
   joy_angle_pub.publish(&joy_angle_msg);
 
 
+  
+
   if (forward >= backward) {
-    leftMotor.go(forward);
+    leftMotor.go( int(forward*backmotor_synchro_coeff) );
     rightMotor.go(forward);
   } else {
-    leftMotor.back(backward);
+    leftMotor.back( int(backward*backmotor_synchro_coeff) );
     rightMotor.back(backward);
   }
 

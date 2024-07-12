@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import rospy
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32, Bool
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import pickle
@@ -13,28 +13,55 @@ class DataMaker:
         self.bridge = CvBridge()
         self.image = None
         self.int_value = None
+        self.collecting = False
         
         # 카메라 정보 받아오기
         self.image_sub = rospy.Subscriber('/camera/image', Image, self.image_callback)
         # 조향값 정보 받아오기
         self.int_sub = rospy.Subscriber('/pot_angle', Int32, self.angle_callback)
-        
-        # 키보드 입력 받아주기
-        self.keyboard_pub = rospy.Publisher('/keyboard_input', Int32, queue_size=10)
-        
+        # 버튼 인풋 정보 받아오기
+        self.button_sub = rospy.Subscriber('/save_command', Bool, self.button_callback)
+       
         # 저장 경로
-        self.save_dir = rospy.get_param('~save_dir', '/tmp')
+        self.save_dir = '/home/fmtc/data'
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
+
+        # 데이터 저장을 위한 리스트
+        self.data_list = []
+
         # 키보드 리스너 설정
         self.listener = keyboard.Listener(on_press=self.on_press)
         self.listener.start()
 
     def image_callback(self, msg):
         self.image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        if self.collecting:
+            self.store_data()
 
     def angle_callback(self, msg):
         self.int_value = msg.data
+        if self.collecting:
+            self.store_data()
+        
+    def button_callback(self, msg):
+        if msg.data:
+            if self.collecting:
+                # 데이터 저장하고 수집 중지
+                self.save_data()
+                self.collecting = False
+                rospy.loginfo("Collecting data saved")
+            else:
+                # 데이터 수집 시작
+                self.collecting = True
+                rospy.loginfo("Started collecting data")
+
+    def store_data(self):
+        if self.image is not None and self.int_value is not None:
+            self.data_list.append({'image': self.image, 'int_value': self.int_value})
+            rospy.loginfo("Data appended to list")
+            self.image = None
+            self.int_value = None
 
     def generate_filename(self, base_path):
         index = 1
@@ -45,39 +72,33 @@ class DataMaker:
         return file_path
 
     def save_data(self):
-        if (self.image is not None) and (self.int_value is not None):
-            data = {
-                'image': self.image,
-                'int_value': self.int_value
-            }
+        if self.data_list:
             file_path = self.generate_filename(self.save_dir)
             with open(file_path, 'wb') as f:
-                pickle.dump(data, f)
+                pickle.dump(self.data_list, f)
             rospy.loginfo(f"Data saved to {file_path}")
-            
-            # 자료가 전달되지 않았을때 기준 코드
-            # 다만 이미지랑, 조향값이랑 초당 전송 개수가 달라서 문제가 발생할 수 있다. 해당 문제 발생시 아래 코드 수정
-            self.image = None
-            self.int_value = None
+            # 저장 후 데이터 리스트 초기화
+            self.data_list = []
+
+    def load_data(self, file_path):
+        try:
+            with open(file_path, 'rb') as f:
+                data = pickle.load(f)
+            rospy.loginfo(f"Data loaded from {file_path}")
+            for item in data:
+                rospy.loginfo(f"Image shape: {item['image'].shape}, Int value: {item['int_value']}")
+        except Exception as e:
+            rospy.logerr(f"Failed to load data from {file_path}: {e}")
 
     def on_press(self, key):
         try:
-            # 키보드 입력을 문자로 변환하여 퍼블리시
-            if key.char == 'w':
-                self.keyboard_pub.publish(1)
-                rospy.loginfo("Published keyboard input: 1 (forward)")
-            elif key.char == 'a':
-                self.keyboard_pub.publish(2)
-                rospy.loginfo("Published keyboard input: 2 (left)")
-            elif key.char == 's':
-                self.keyboard_pub.publish(3)
-                rospy.loginfo("Published keyboard input: 3 (backward)")
-            elif key.char == 'd':
-                self.keyboard_pub.publish(4)
-                rospy.loginfo("Published keyboard input: 4 (right)")
-            elif key.char == 'p':
-                rospy.loginfo("Saving data due to 'p' key press")
+            if key.char == 's':
+                rospy.loginfo("Saving data due to 's' key press")
                 self.save_data()
+            elif key.char == 'l':
+                file_path = '/mnt/data/data9.pkl'  # Adjust the path as necessary
+                rospy.loginfo("Loading data due to 'l' key press")
+                self.load_data(file_path)
         except AttributeError:
             # 문자가 아닌 키 입력 무시
             pass
@@ -86,3 +107,4 @@ if __name__ == '__main__':
     rospy.init_node('DataMaker', anonymous=True)
     saver = DataMaker()
     rospy.spin()
+

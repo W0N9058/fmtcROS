@@ -9,7 +9,10 @@ constexpr float BACKMOTOR_MAX = 255.0;
 constexpr float BACKMOTOR_MIN = 0.0;
 constexpr float FRONTMOTOR_MAX = 800; // potentiometer 값으로 매핑하도록...
 constexpr float FRONTMOTOR_MIN = 115;
-constexpr float backmotor_synchro_coeff = 0.9; // 왼쪽 바퀴가 빠른 현상 억제 변수
+
+//뒷바퀴 감속 비율 상수
+constexpr float leftmotor_coeff = 1.0; 
+constexpr float rightmotor_coeff = 1.0;
 
 // class
 class MyMotorControl {
@@ -158,10 +161,7 @@ void FrontMyMotorControl::move(int target_angle) {
   double control_value = Kp * error_angle + Ki * integral + Kd * derivative;
   control_value = constrain(control_value, -255, 255);
 
-
-
-  
-  // 방향 제어 및 속도 제어
+  // 조향 제어
   if (control_value > 0) { // 좌회전해야하는 상황
     digitalWrite(input1, LOW);
     digitalWrite(input2, HIGH);
@@ -175,6 +175,17 @@ void FrontMyMotorControl::move(int target_angle) {
   }
   prev_error = error_angle;
   
+  //뒷바퀴 속도 제어
+  int backmotor_coeff = mapFloat(pot_value, FRONTMOTOR_MAX, FRONTMOTOR_MIN, -0.5, 0.5);
+  if(backmotor_coeff < 0){ //현재 좌회전중
+    leftmotor_coeff = 1.0 - abs(backmotor_coeff)
+    rightmotor_coeff = 1.0
+  } else { //현재 우회전중
+    leftmotor_coeff = 1.0
+    rightmotor_coeff = 1.0 - abs(backmotor_coeff)
+  }
+
+
 }
 
 
@@ -184,29 +195,28 @@ void keyCallback(const std_msgs::Float32MultiArray &msg) {
   int backward = mapFloat(msg.data[1], 1.0, -1.0, BACKMOTOR_MIN, BACKMOTOR_MAX);
   int joy_angle = mapFloat(msg.data[2], -1.0, 1.0, FRONTMOTOR_MIN, FRONTMOTOR_MAX);
 
-  //debugging
-//  pwm_msg.data = [forward, backward, angle];
+  //--------------debugging-----------------//
+  //pwm_msg.data = [forward, backward, angle];
   forward_msg.data = forward;
   backward_msg.data = backward;
   joy_angle_msg.data = joy_angle;
   forward_pub.publish(&forward_msg);
   backward_pub.publish(&backward_msg);
   joy_angle_pub.publish(&joy_angle_msg);
-
-
-  
+  //----------------------------------------//
 
   if (forward >= backward) {
-    leftMotor.go( int(forward*backmotor_synchro_coeff) );
-    rightMotor.go(forward);
+    leftMotor.go( int(forward*leftmotor_coeff) );
+    rightMotor.go( int(forward*rightmotor_coeff) );
   } else {
-    leftMotor.back( int(backward*backmotor_synchro_coeff) );
-    rightMotor.back(backward);
+    leftMotor.back( int(backward*leftmotor_coeff) );
+    rightMotor.back( int(backward*rightmotor_coeff) );
   }
-
   // positive input is left!!
   steeringMotor.move(joy_angle);
 }
+
+
 
 int mapFloat(float value, float fromLow, float fromHigh, float toLow, float toHigh) {
   return int(round(toLow + (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow)));

@@ -11,8 +11,8 @@ constexpr float FRONTMOTOR_MAX = 800; // potentiometer 값으로 매핑하도록
 constexpr float FRONTMOTOR_MIN = 115;
 
 //뒷바퀴 감속 비율 상수
-constexpr float leftmotor_coeff = 1.0; 
-constexpr float rightmotor_coeff = 1.0;
+float leftmotor_coeff = 1.0; 
+float rightmotor_coeff = 1.0;
 
 // class
 class MyMotorControl {
@@ -176,13 +176,13 @@ void FrontMyMotorControl::move(int target_angle) {
   prev_error = error_angle;
   
   //뒷바퀴 속도 제어
-  int backmotor_coeff = mapFloat(pot_value, FRONTMOTOR_MAX, FRONTMOTOR_MIN, -0.5, 0.5);
+  int backmotor_coeff = mapFloat(pot_value, FRONTMOTOR_MAX, FRONTMOTOR_MIN, -0.4, 0.4);
   if(backmotor_coeff < 0){ //현재 좌회전중
-    leftmotor_coeff = 1.0 - abs(backmotor_coeff)
-    rightmotor_coeff = 1.0
+    leftmotor_coeff = 1.0 - abs(backmotor_coeff);
+    rightmotor_coeff = 1.0;
   } else { //현재 우회전중
-    leftmotor_coeff = 1.0
-    rightmotor_coeff = 1.0 - abs(backmotor_coeff)
+    leftmotor_coeff = 1.0;
+    rightmotor_coeff = 1.0 - abs(backmotor_coeff);
   }
 
 

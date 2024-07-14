@@ -5,7 +5,9 @@ constexpr float BACKMOTOR_MAX = 255.0;
 constexpr float BACKMOTOR_MIN = 0.0;
 constexpr float FRONTMOTOR_MAX = 800; // potentiometer 값으로 매핑하도록...
 constexpr float FRONTMOTOR_MIN = 115;
-constexpr float backmotor_synchro_coeff = 0.9; // 왼쪽 바퀴가 빠른 현상 억제 변수
+
+int trig = 52;
+int echo = 53;
 
 // class
 class MyMotorControl {
@@ -59,6 +61,9 @@ void setup() {
   rightMotor.stop();
   steeringMotor.stop();
   
+  pinMode(trig, OUTPUT);
+  pinMode(echo, INPUT);
+  Serial.begin(57600);
 }
 
 void loop() {
@@ -76,6 +81,30 @@ void loop() {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Ultrasonic dist sensor
+float calcDist() {
+  float Length, distance;
+
+  // trigger 신호 발생 (10us)
+  digitalWrite(trig, LOW);     // 초기화
+  delay(2);
+  digitalWrite(trig, HIGH);    // trigger 신호 발생 (10us)
+  delay(10);
+  digitalWrite(trig, LOW);
+
+  // Echo 신호 입력
+  /* pulseIn()는 아두이노 기본 함수로 입력신호가 High 또는 Low가 되는 시간을 측정해주는 함수,
+     pulseIn 함수를 통해 echo핀에 초음파가 돌아오는 시간을 측정 */
+  Length = pulseIn(echo, HIGH);  
+
+  // 거리계산
+  // 거리를 계산하는 공식을 코딩, 10000는 cm로 단위변환을 위해 사용함
+  distance = ((float)(340 * Length) / 10000) / 2;
+
+  return distance; // 계산된 거리 값을 반환
+}
+
 
 // MyMotorControl
 MyMotorControl::MyMotorControl(int input1, int input2, int pwm) {
@@ -150,10 +179,10 @@ int mapFloat(float value, float fromLow, float fromHigh, float toLow, float toHi
   return int(round(toLow + (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow)));
 }
 
-//////////////////// 주차 미션을 위해 추가된 함수들
+//////////////////// ------------주차 미션을 위해 추가된 함수들------------------ ///////////////////////
 void GO(int duration) {
   int power = 150;
-  leftMotor.go(power*backmotor_synchro_coeff);
+  leftMotor.go(power);
   rightMotor.go(power);
   delay(duration);
   leftMotor.stop();
@@ -162,7 +191,7 @@ void GO(int duration) {
 
 void BACK(int duration) {
   int power = 150;
-  leftMotor.back(power*backmotor_synchro_coeff);
+  leftMotor.back(power);
   rightMotor.back(power);
   delay(duration);
   leftMotor.stop();
@@ -187,4 +216,30 @@ void STEER(const char* direction) {
     delay(10);
   }
   steeringMotor.stop();
+}
+
+void STOPWHEN(float threshold, const char* condition) {
+  int power = 150;
+  int count = 0;
+
+  while (true) {
+    float distance = calcDist();
+
+    if ((strcmp(condition, "bigger") == 0 && distance > threshold) ||
+        (strcmp(condition, "smaller") == 0 && distance < threshold)) {
+      count++;
+    } else {
+      count = 0;
+    }
+
+    if (count >= 3) {
+      leftMotor.stop();
+      rightMotor.stop();
+      break;
+    }
+
+    leftMotor.go(power);
+    rightMotor.go(power);
+    delay(100);//이게 있어야할까..?
+  }
 }

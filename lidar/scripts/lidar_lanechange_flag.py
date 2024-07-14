@@ -60,7 +60,7 @@ class ObstacleDetection:
                     max_y_index = max(indices, key=lambda index: self.cluster_coordinates[index][1])
                     self.y_coord = self.cluster_coordinates[max_y_index][1]
                     
-
+                print("obstacle detected")
         else:
             # Reset the count and obstacle flag
             self.count = 0

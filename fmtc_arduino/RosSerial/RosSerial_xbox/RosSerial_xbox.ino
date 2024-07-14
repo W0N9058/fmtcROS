@@ -151,18 +151,9 @@ FrontMyMotorControl::FrontMyMotorControl(int input1, int input2, int pwm)
 
 void FrontMyMotorControl::move(int target_angle) {
   int error_angle = target_angle - pot_value;
-  double Kp = 1; 
-  double Ki = 0.01;  
-  double Kd = 0.02;
-
-  integral += error_angle;
-  double derivative = error_angle - prev_error;
-
-  double control_value = Kp * error_angle + Ki * integral + Kd * derivative;
-  control_value = constrain(control_value, -255, 255);
-
-  // 조향 제어
-  if (control_value > 0) { // 좌회전해야하는 상황
+  
+  
+  if (error_angle > 0){ // 좌회전해야하는 상황
     digitalWrite(input1, LOW);
     digitalWrite(input2, HIGH);
     analogWrite(pwm, abs(control_value));
@@ -173,19 +164,7 @@ void FrontMyMotorControl::move(int target_angle) {
     digitalWrite(input2, LOW);
     analogWrite(pwm, abs(control_value));
   }
-  prev_error = error_angle;
   
-  //뒷바퀴 속도 제어
-  int backmotor_coeff = mapFloat(pot_value, FRONTMOTOR_MAX, FRONTMOTOR_MIN, -0.5, 0.5);
-  if(backmotor_coeff < 0){ //현재 좌회전중
-    leftmotor_coeff = 1.0 - abs(backmotor_coeff);
-    rightmotor_coeff = 1.0;
-  } else { //현재 우회전중
-    leftmotor_coeff = 1.0;
-    rightmotor_coeff = 1.0 - abs(backmotor_coeff);
-  }
-
-
 }
 
 

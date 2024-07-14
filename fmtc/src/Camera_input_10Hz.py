@@ -3,6 +3,7 @@ import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
+import os
 
 def image_publisher():
     # ROS 노드 초기화
@@ -12,7 +13,7 @@ def image_publisher():
     bridge = CvBridge()
 
     # USB 카메라 열기 (디바이스 인덱스 0 사용)
-    cap = cv2.VideoCapture(2)
+    cap = cv2.VideoCapture(10)
     if not cap.isOpened():
         rospy.logerr("USB 카메라를 열 수 없습니다.")
         return
@@ -31,6 +32,10 @@ def image_publisher():
 
         # 이미지 메시지 퍼블리시
         image_pub.publish(image_msg)
+        
+        # 터미널 화면 지우기
+        # os.system('clear')
+        
         rospy.loginfo("이미지 퍼블리시됨")
 
         # 루프 주기 유지
@@ -43,3 +48,4 @@ if __name__ == '__main__':
         image_publisher()
     except rospy.ROSInterruptException:
         pass
+

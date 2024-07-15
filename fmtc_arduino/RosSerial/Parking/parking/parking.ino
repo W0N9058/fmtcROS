@@ -67,13 +67,57 @@ void setup() {
 }
 
 void loop() {
-    GO(1000);
-    STEER('left');
-    GO(1000);
-    STEER('right');
-    BACK(1000);
-    STEER('center');
-    BACK(1000);
+  //test
+  STEER("center");
+  STEER("left");
+  Serial.println("GO");
+  GO(1000);
+  Serial.println("Go ended");
+  STEER("right");
+  Serial.println("BACK");
+  BACK(1000);
+  Serial.println("BACK ended");
+  return;
+
+
+  // STEER("center");
+  // STOPWHEN(무조건멈출값, "smaller");//차 발견하면 멈춤
+  // GO(300);//약간 더 전진
+  // if (calcDist() > case분류기준){//먼 케이스
+  //   STOPWHEN(차를지나쳐서멈추도록, "bigger");
+  //   //GO(필요한만큼)
+  //   STEER("left");
+  //   GO(필요한만큼);
+  //   STEER("right");
+  //   BACK(필요한만큼);
+  //   STEER("center");
+  //   BACK(필요한만큼);
+  //   delay(3000);//주차끝!
+
+  //   GO(필요한만큼);
+  //   STEER("right");
+  //   GO(필요한만큼);
+  //   STEER("center");
+  //   GO(필요한만큼);
+
+  // } else { // 가까운 케이스
+  //   STOPWHEN(차를지나쳐서멈추도록, "bigger");
+  //   //GO(필요한만큼)
+  //   STEER("left");
+  //   GO(필요한만큼);
+  //   STEER("right");
+  //   BACK(필요한만큼);
+  //   STEER("center");
+  //   BACK(필요한만큼);
+  //   delay(3000);//주차끝!
+
+  //   GO(필요한만큼);
+  //   STEER("right");
+  //   GO(필요한만큼);
+  //   STEER("center");
+  //   GO(필요한만큼);
+  // }
+    
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////

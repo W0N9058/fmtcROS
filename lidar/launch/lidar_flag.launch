@@ -2,7 +2,7 @@
     <include file="$(find rplidar_ros)/launch/rplidar_a2m12.launch"/>
 
     <node name="serial_node"        pkg="rosserial_python"      type="serial_node.py">
-    <param name="port"              type="string"               value="/dev/ttyACM0"/>
+    <param name="port"              type="string"               value="/dev/ttyARDUINO"/>
     <param name="baud"              type="int"                  value="57600"/>
     </node>
 

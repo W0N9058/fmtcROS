@@ -5,12 +5,12 @@ from matplotlib import pyplot as plt
 
 # Defining variables to hold meter-to-pixel conversion
 ym_per_pix = 1.78 / 356
-xm_per_pix = 2.03 / 406
+xm_per_pix = 2.03 / 266
 
 PATH = os.getcwd()
 
 def readVideo():
-    inputVideo = cv2.VideoCapture(os.path.join(PATH, '0714dark.mp4'))
+    inputVideo = cv2.VideoCapture(os.path.join(PATH, 'data13.mp4'))
     
     length = int(inputVideo.get(cv2.CAP_PROP_FRAME_COUNT))
     width = int(inputVideo.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -54,28 +54,39 @@ def Calibrate(inputImage):
 
 def processImage(inputImage):
 
-    # Apply HLS color filtering to filter out white lane lines
-    hls = cv2.cvtColor(inputImage, cv2.COLOR_BGR2HLS)
-    lower_white = np.array([0, 160, 10])
-    upper_white = np.array([230, 230, 230])
-    mask = cv2.inRange(inputImage, lower_white, upper_white)
-    hls_result = cv2.bitwise_and(inputImage, inputImage, mask = mask)
+    # Convert to HSV color and detect lane
+    hsv = cv2.cvtColor(inputImage, cv2.COLOR_BGR2HSV)
+    
+    lower = np.array([70, 0, 190])
+    upper = np.array([255, 255, 255])
+    
+    mask = cv2.inRange(hsv, lower, upper)
+
+    hsv_result = cv2.bitwise_and(inputImage, inputImage, mask=mask)
+    
+    # # Apply HLS color filtering to filter out white lane lines
+    # hls = cv2.cvtColor(inputImage, cv2.COLOR_BGR2HLS)
+    # lower_white = np.array([0, 200, 100])
+    # upper_white = np.array([255, 255, 255])
+    # mask = cv2.inRange(inputImage, lower_white, upper_white)
+    # cv2.imshow("mask", mask)
+    # hls_result = cv2.bitwise_and(inputImage, inputImage, mask = mask)
 
     # Convert image to grayscale, apply threshold, blur & extract edges
-    gray = cv2.cvtColor(hls_result, cv2.COLOR_BGR2GRAY)
-    _, thresh = cv2.threshold(gray, 160, 255, cv2.THRESH_BINARY)
-    blur = cv2.GaussianBlur(thresh,(5, 5), 0)
+    gray = cv2.cvtColor(hsv_result, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 190, 255, cv2.THRESH_BINARY)
+    blur = cv2.GaussianBlur(thresh,(3, 3), 0)
     canny = cv2.Canny(blur, 40, 60)
 
     # Display the processed images
-    cv2.imshow("Image", inputImage)
-    cv2.imshow("HLS Filtered", hls_result)
-    cv2.imshow("Grayscale", gray)
+    # cv2.imshow("Image", inputImage)
+    cv2.imshow("HSV Filtered", hsv_result)
+    # cv2.imshow("Grayscale", gray)
     cv2.imshow("Thresholded", thresh)
-    cv2.imshow("Blurred", blur)
-    cv2.imshow("Canny Edges", canny)
+    # cv2.imshow("Blurred", blur)
+    # cv2.imshow("Canny Edges", canny)
 
-    return hls_result, gray, thresh, blur, canny
+    return hsv_result, gray, thresh, blur, canny
 
 def perspectiveWarp(inputImage):
 
@@ -90,16 +101,16 @@ def perspectiveWarp(inputImage):
     # cv2.imshow('test', inputImageCopied)
     
     # Perspective points to be warped
-    src = np.float32([[188, 145],
-                      [306, 139],
-                      [60, 363],
-                      [430, 342]])
+    src = np.float32([[210, 108],
+                      [325, 108],
+                      [95, 315],
+                      [419, 312]])
 
     # Window to be shown
-    dst = np.float32([[142, 54],
-                      [498, 54],
-                      [142, 460],
-                      [498, 460]])
+    dst = np.float32([[130, 194],
+                      [510, 194],
+                      [130, 460],
+                      [510, 460]])
 
     # Matrix to warp the image for birdseye window
     matrix = cv2.getPerspectiveTransform(src, dst)
@@ -107,19 +118,10 @@ def perspectiveWarp(inputImage):
     minv = cv2.getPerspectiveTransform(dst, src)
     birdseye = cv2.warpPerspective(inputImage, matrix, img_size)
 
-    # Get the birdseye window dimensions
-    height, width = birdseye.shape[:2]
-
-    # Divide the birdseye view into 2 halves to separate left & right lanes
-    birdseyeLeft  = birdseye[0:height, 0:width // 2]
-    birdseyeRight = birdseye[0:height, width // 2:width]
-
     # Display birdseye view image
     # cv2.imshow("Birdseye" , birdseye)
-    # cv2.imshow("Birdseye Left" , birdseyeLeft)
-    # cv2.imshow("Birdseye Right", birdseyeRight)
 
-    return birdseye, birdseyeLeft, birdseyeRight, minv
+    return birdseye, minv
 
 def plotHistogram(inputImage):
 
@@ -145,17 +147,21 @@ def slide_window_search(binary_warped, histogram):
     rightx_base = np.argmax(histogram[midpoint:]) + midpoint
 
     # A total of 9 windows will be used
-    nwindows = 9
+    nwindows = 7
     window_height = int(binary_warped.shape[0] / nwindows)
     nonzero = binary_warped.nonzero()
     nonzeroy = np.array(nonzero[0])
     nonzerox = np.array(nonzero[1])
     leftx_current = leftx_base
     rightx_current = rightx_base
-    margin = 75
+    margin = 120
     minpix = 30
     left_lane_inds = []
     right_lane_inds = []
+    is_left_hit_left = False
+    is_left_hit_right = False
+    is_right_hit_right = False
+    is_right_hit_left = False
 
     #### START - Loop to iterate through windows and search for lane lines #####
     for window in range(nwindows):
@@ -169,10 +175,31 @@ def slide_window_search(binary_warped, histogram):
         (0,255,0), 2)
         cv2.rectangle(out_img, (win_xright_low,win_y_low), (win_xright_high,win_y_high),
         (0,255,0), 2)
-        good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
-        (nonzerox >= win_xleft_low) &  (nonzerox < win_xleft_high)).nonzero()[0]
-        good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
-        (nonzerox >= win_xright_low) &  (nonzerox < win_xright_high)).nonzero()[0]
+        cv2.imshow('window', out_img)
+
+        # Getting indices of lane within the window
+        if not is_left_hit_left and not is_left_hit_right:
+            good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
+            (nonzerox >= win_xleft_low) &  (nonzerox < win_xleft_high)).nonzero()[0]
+        if not is_right_hit_right and not is_right_hit_left:
+            good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
+            (nonzerox >= win_xright_low) &  (nonzerox < win_xright_high)).nonzero()[0]
+
+        # Check if the lane hits the left or right end
+        print(window, nonzerox[good_left_inds])
+        if not len(nonzerox[good_left_inds]) == 0:
+            is_left_hit_left = np.min(nonzerox[good_left_inds]) < 5
+            is_left_hit_right = np.max(nonzerox[good_left_inds]) > 633
+        if not len(nonzerox[good_right_inds]) == 0:
+            is_right_hit_right = np.max(nonzerox[good_right_inds]) > 633
+            is_right_hit_left = np.min(nonzerox[good_right_inds]) < 5
+        if is_left_hit_left: print("left hit left!!")
+        if is_left_hit_right: print("left hit right!!")
+        if is_right_hit_right: print("right hit right!!")
+        if is_right_hit_left: print("right hit left!!")
+        # if (window == 6):
+        #     # print(good_left_inds)
+        #     print(nonzerox[good_left_inds])
         left_lane_inds.append(good_left_inds)
         right_lane_inds.append(good_right_inds)
         if len(good_left_inds) > minpix:
@@ -227,7 +254,7 @@ def general_search(binary_warped, left_fit, right_fit):
     nonzero = binary_warped.nonzero()
     nonzeroy = np.array(nonzero[0])
     nonzerox = np.array(nonzero[1])
-    margin = 75
+    margin = 150
     left_lane_inds = ((nonzerox > (left_fit[0]*(nonzeroy**2) + left_fit[1]*nonzeroy +
     left_fit[2] - margin)) & (nonzerox < (left_fit[0]*(nonzeroy**2) +
     left_fit[1]*nonzeroy + left_fit[2] + margin)))
@@ -386,15 +413,15 @@ def main():
             # cv2.imshow('after', frame)
             
             # Warping the frame
-            birdView, birdViewL, birdViewR, minverse = perspectiveWarp(frame)
+            birdView, minverse = perspectiveWarp(frame)
             cv2.imshow('birdView', birdView)
             
             # Lane detection
             hls, grayscale, thresh, blur, canny = processImage(birdView)
-            hlsL, grayscaleL, threshL, blurL, cannyL = processImage(birdViewL)
-            hlsR, grayscaleR, threshR, blurR, cannyR = processImage(birdViewR)
+            # hlsL, grayscaleL, threshL, blurL, cannyL = processImage(birdViewL)
+            # hlsR, grayscaleR, threshR, blurR, cannyR = processImage(birdViewR)
             
-            cv2.imshow('canny', canny)
+            # cv2.imshow('canny', canny)
             
             # Plot histogram
             hist, leftBase, rightBase = plotHistogram(thresh)
@@ -409,7 +436,7 @@ def main():
             # plt.show()
             # cv2.waitKey(0)
             print(left_fit)
-            cv2.waitKey(0)
+            # cv2.waitKey(0)
             
             # General search
             draw_info = general_search(thresh, left_fit, right_fit)

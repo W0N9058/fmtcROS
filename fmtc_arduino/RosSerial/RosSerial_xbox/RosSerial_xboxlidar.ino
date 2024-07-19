@@ -10,41 +10,37 @@ constexpr float BACKMOTOR_MIN = 0.0;
 constexpr float FRONTMOTOR_MAX = 850; // potentiometer 값으로 매핑하도록...
 constexpr float FRONTMOTOR_MIN = 115;
 
-// 뒷바퀴 감속 비율 상수
-float leftmotor_coeff = 1.0;
+//뒷바퀴 감속 비율 상수
+float leftmotor_coeff = 1.0; 
 float rightmotor_coeff = 1.0;
 
 // class
-class MyMotorControl
-{
-protected:
-  int input1; // digital
-  int input2; // digital
-  int pwm;    // pwm
+class MyMotorControl {
+  protected:
+    int input1; // digital
+    int input2; // digital
+    int pwm; // pwm
 
-public:
-  MyMotorControl(int input1, int input2, int pwm);
-  void stop();
-  void changePower(int power);
+  public:
+    MyMotorControl(int input1, int input2, int pwm);
+    void stop();
+    void changePower(int power);
 };
 
-class BackMyMotorControl : public MyMotorControl
-{
-public:
-  BackMyMotorControl(int input1, int input2, int pwm);
-  void go(int power);
-  void back(int power);
+class BackMyMotorControl : public MyMotorControl {
+  public:
+    BackMyMotorControl(int input1, int input2, int pwm);
+    void go(int power);
+    void back(int power);
 };
 
-class FrontMyMotorControl : public MyMotorControl
-{
-private:
-  int prev_error;
-  double integral;
-
-public:
-  FrontMyMotorControl(int input1, int input2, int pwm);
-  void move(int power);
+class FrontMyMotorControl : public MyMotorControl {
+  private:
+    int prev_error;
+    double integral;
+  public:
+    FrontMyMotorControl(int input1, int input2, int pwm);
+    void move(int power);
 };
 
 // 키보드입력 받아서 모터 조작하는 함수
@@ -73,16 +69,15 @@ ros::Publisher joy_angle_pub("joy_angle", &joy_angle_msg);
 ros::Subscriber<std_msgs::Float32MultiArray> key_sub("control_input", &keyCallback);
 
 // 핀 설정
-const int potPin = A0;                        // 포텐시오미터 핀 설정
-BackMyMotorControl leftMotor(30, 31, 5);      // 왼쪽 모터를 위한 핀 설정
-BackMyMotorControl rightMotor(32, 33, 6);     // 오른쪽 모터를 위한 핀 설정
-FrontMyMotorControl steeringMotor(34, 35, 9); // 조향 모터를 위한 핀 설정
+const int potPin = A0; // 포텐시오미터 핀 설정
+BackMyMotorControl leftMotor(22, 23, 5); // 왼쪽 모터를 위한 핀 설정
+BackMyMotorControl rightMotor(24, 25, 6); // 오른쪽 모터를 위한 핀 설정
+FrontMyMotorControl steeringMotor(26, 27, 9); // 조향 모터를 위한 핀 설정
 
-void setup()
-{
+void setup() {
   // ROS 노드 초기화
   nh.initNode();
-
+  
   // 퍼블리셔와 구독자 설정
   nh.advertise(pot_angle_pub);
   nh.advertise(forward_pub);
@@ -93,19 +88,19 @@ void setup()
   leftMotor.stop();
   rightMotor.stop();
   steeringMotor.stop();
+  
 }
 
-void loop()
-{
+void loop() {
   // 포텐시오미터 값 읽기
   pot_value = analogRead(potPin);
-
+  
   // 메시지에 값 설정
   pot_angle_msg.data = pot_value;
 
   // 메시지 퍼블리시
   pot_angle_pub.publish(&pot_angle_msg);
-
+  
   // ROS 핸들러 스핀
   nh.spinOnce();
 
@@ -114,8 +109,7 @@ void loop()
 }
 
 // MyMotorControl
-MyMotorControl::MyMotorControl(int input1, int input2, int pwm)
-{
+MyMotorControl::MyMotorControl(int input1, int input2, int pwm) {
   this->input1 = input1;
   this->input2 = input2;
   this->pwm = pwm;
@@ -125,31 +119,27 @@ MyMotorControl::MyMotorControl(int input1, int input2, int pwm)
   pinMode(pwm, OUTPUT);
 }
 
-void MyMotorControl::stop()
-{
+void MyMotorControl::stop() {
   digitalWrite(input1, LOW);
   digitalWrite(input2, LOW);
   analogWrite(pwm, 0);
 }
 
-void MyMotorControl::changePower(int power)
-{
+void MyMotorControl::changePower(int power) {
   analogWrite(pwm, power);
 }
 
 // BackMyMotorControl
 BackMyMotorControl::BackMyMotorControl(int input1, int input2, int pwm)
-    : MyMotorControl(input1, input2, pwm) {}
+  : MyMotorControl(input1, input2, pwm) {}
 
-void BackMyMotorControl::go(int power)
-{
+void BackMyMotorControl::go(int power) {
   digitalWrite(input1, LOW);
   digitalWrite(input2, HIGH);
   analogWrite(pwm, power);
 }
 
-void BackMyMotorControl::back(int power)
-{
+void BackMyMotorControl::back(int power) {
   digitalWrite(input1, HIGH);
   digitalWrite(input2, LOW);
   analogWrite(pwm, power);
@@ -157,14 +147,13 @@ void BackMyMotorControl::back(int power)
 
 // FrontMyMotorControl
 FrontMyMotorControl::FrontMyMotorControl(int input1, int input2, int pwm)
-    : MyMotorControl(input1, input2, pwm) {}
+  : MyMotorControl(input1, input2, pwm) {}
 
-void FrontMyMotorControl::move(int target_angle)
-{
+void FrontMyMotorControl::move(int target_angle) {
   int error_angle = target_angle - pot_value;
-  double Kp = 1;
-  double Ki = 0.005;
-  double Kd = 0.01;
+  double Kp = 1; 
+  double Ki = 0.01;  
+  double Kd = 0.02;
 
   integral += error_angle;
   double derivative = error_angle - prev_error;
@@ -173,47 +162,41 @@ void FrontMyMotorControl::move(int target_angle)
   control_value = constrain(control_value, -255, 255);
 
   // 조향 제어
-  if (control_value > 0)
-  { // 좌회전해야하는 상황
+  if (control_value > 0) { // 좌회전해야하는 상황
     digitalWrite(input1, LOW);
     digitalWrite(input2, HIGH);
     analogWrite(pwm, abs(control_value));
-  }
-  else if (control_value == 0)
-  {
+  } else if (control_value == 0) {
     stop();
-  }
-  else
-  { // 우회전해야하는 상황
+  } else { // 우회전해야하는 상황
     digitalWrite(input1, HIGH);
     digitalWrite(input2, LOW);
     analogWrite(pwm, abs(control_value));
   }
   prev_error = error_angle;
-
-  // 뒷바퀴 속도 제어
+  
+  //뒷바퀴 속도 제어
   int backmotor_coeff = mapFloat(pot_value, FRONTMOTOR_MAX, FRONTMOTOR_MIN, -0.5, 0.5);
-  if (backmotor_coeff < 0)
-  { // 현재 좌회전중
+  if(backmotor_coeff < 0){ //현재 좌회전중
     leftmotor_coeff = 1.0 - abs(backmotor_coeff);
     rightmotor_coeff = 1.0;
-  }
-  else
-  { // 현재 우회전중
+  } else { //현재 우회전중
     leftmotor_coeff = 1.0;
     rightmotor_coeff = 1.0 - abs(backmotor_coeff);
   }
+
+
 }
 
+
 // Xbox input callback function
-void keyCallback(const std_msgs::Float32MultiArray &msg)
-{
+void keyCallback(const std_msgs::Float32MultiArray &msg) {
   int forward = mapFloat(msg.data[0], 1.0, -1.0, BACKMOTOR_MIN, BACKMOTOR_MAX);
   int backward = mapFloat(msg.data[1], 1.0, -1.0, BACKMOTOR_MIN, BACKMOTOR_MAX);
   int joy_angle = mapFloat(msg.data[2], -1.0, 1.0, FRONTMOTOR_MIN, FRONTMOTOR_MAX);
 
   //--------------debugging-----------------//
-  // pwm_msg.data = [forward, backward, angle];
+  //pwm_msg.data = [forward, backward, angle];
   forward_msg.data = forward;
   backward_msg.data = backward;
   joy_angle_msg.data = joy_angle;
@@ -222,21 +205,19 @@ void keyCallback(const std_msgs::Float32MultiArray &msg)
   joy_angle_pub.publish(&joy_angle_msg);
   //----------------------------------------//
 
-  if (forward >= backward)
-  {
-    leftMotor.go(int(forward * leftmotor_coeff));
-    rightMotor.go(int(forward * rightmotor_coeff));
-  }
-  else
-  {
-    leftMotor.back(int(backward * leftmotor_coeff));
-    rightMotor.back(int(backward * rightmotor_coeff));
+  if (forward >= backward) {
+    leftMotor.go( int(forward*leftmotor_coeff) );
+    rightMotor.go( int(forward*rightmotor_coeff) );
+  } else {
+    leftMotor.back( int(backward*leftmotor_coeff) );
+    rightMotor.back( int(backward*rightmotor_coeff) );
   }
   // positive input is left!!
   steeringMotor.move(joy_angle);
 }
 
-int mapFloat(float value, float fromLow, float fromHigh, float toLow, float toHigh)
-{
+
+
+int mapFloat(float value, float fromLow, float fromHigh, float toLow, float toHigh) {
   return int(round(toLow + (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow)));
 }

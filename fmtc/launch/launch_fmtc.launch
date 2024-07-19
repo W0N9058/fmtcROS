@@ -1,8 +1,10 @@
 <launch>
-    <node pkg="fmtc" type="controller.py" name="controller" output="screen"/>
+<include file="$(find rplidar_ros)/launch/rplidar_a2m12.launch"/>
+  <node pkg="fmtc" type="controller.py" name="controller" output="screen"/>
   <node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen"/>
     <param name="port" value="/dev/ttyARDUINO"/>
     <param name="baud" value="57600"/>
   <node pkg="fmtc" type="DataMaker.py" name="datamaker" output="screen"/>
   <node pkg="fmtc" type="Camera_input_10Hz.py" name="Camera_10Hz" output="screen"/>
+  <node pkg="fmtc" name="lane_detect_lidar" type="lidar_lanechange_flag2.py"/>
 </launch>

@@ -7,17 +7,17 @@ import os
 
 def image_publisher():
     # ROS 노드 초기화
-    rospy.init_node('usb_cam_publisher', anonymous=True)
+    rospy.init_node('usb_cam2_publisher', anonymous=True)
     # 이미지 퍼블리셔 설정
-    image_pub = rospy.Publisher('/camera/image', Image, queue_size=10)
+    image_pub = rospy.Publisher('/camera/image2', Image, queue_size=10)
     bridge = CvBridge()
 
     # USB 카메라 열기 (디바이스 인덱스 0 사용)
-    cap = cv2.VideoCapture(10)
+    cap = cv2.VideoCapture(20)
     if not cap.isOpened():
         rospy.logerr("USB 카메라를 열 수 없습니다.")
         return
-
+##########################  Hz qusrud ##############################
     rate = rospy.Rate(10)  # 10Hz
 
     while not rospy.is_shutdown():
@@ -36,7 +36,6 @@ def image_publisher():
         # 터미널 화면 지우기
         # os.system('clear')
         
-        ###################
         # rospy.loginfo("이미지 퍼블리시됨")
 
         # 루프 주기 유지

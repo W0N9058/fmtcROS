@@ -141,7 +141,7 @@ class Lidar_ctrl:
     def lidar_CB(self,msg):
 
         self.lidar_msg = msg
-        os.system('clear')
+        # os.system('clear')
         start_time = time.time()   # 시간 측정 시작
 
         ## print(f"range: {self.threshold_short, self.threshold_mid, self.threshold_far}")

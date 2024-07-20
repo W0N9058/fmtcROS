@@ -68,7 +68,7 @@ class ObstacleDetection:
         distance = np.sqrt(self.x_coord**2 + self.y_coord**2)
         # print(f"Distance to the detected object: {distance:.2f} meters")
         # If the distance is less than 0.5 meters, publish the object detected message
-        if distance < 0.5:
+        if distance < 0.8:
             self.object_detected_pub.publish("Object detected")
 
 def main():

@@ -70,9 +70,9 @@ ros::Subscriber<std_msgs::Float32MultiArray> key_sub("control_input", &keyCallba
 
 // 핀 설정
 const int potPin = A0; // 포텐시오미터 핀 설정
-BackMyMotorControl leftMotor(22, 23, 5); // 왼쪽 모터를 위한 핀 설정
-BackMyMotorControl rightMotor(24, 25, 6); // 오른쪽 모터를 위한 핀 설정
-FrontMyMotorControl steeringMotor(26, 27, 9); // 조향 모터를 위한 핀 설정
+BackMyMotorControl leftMotor(30, 31, 5); // 왼쪽 모터를 위한 핀 설정
+BackMyMotorControl rightMotor(32, 33, 6); // 오른쪽 모터를 위한 핀 설정
+FrontMyMotorControl steeringMotor(34, 35, 9); // 조향 모터를 위한 핀 설정
 
 void setup() {
   // ROS 노드 초기화
@@ -152,8 +152,8 @@ FrontMyMotorControl::FrontMyMotorControl(int input1, int input2, int pwm)
 void FrontMyMotorControl::move(int target_angle) {
   int error_angle = target_angle - pot_value;
   double Kp = 1; 
-  double Ki = 0.01;  
-  double Kd = 0.02;
+  double Ki = 0.005;  
+  double Kd = 0.01;
 
   integral += error_angle;
   double derivative = error_angle - prev_error;

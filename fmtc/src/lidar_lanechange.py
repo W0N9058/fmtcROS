@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 
-#!/usr/bin/env python3
-
 import rospy
 from geometry_msgs.msg import Polygon
-from std_msgs.msg import Float64MultiArray, Float64
-from lidar.msg import obstacle_detection 
+from std_msgs.msg import Float64MultiArray, String
 import numpy as np
 
 class ObstacleDetection:
@@ -18,8 +15,8 @@ class ObstacleDetection:
         rospy.Subscriber('cluster_coordinate', Polygon, self.cluster_coord_callback)
         rospy.Subscriber('cluster_point_nums', Float64MultiArray, self.cluster_point_nums_callback)
         
-        # Create a publisher for the distance to the detected object
-        self.distance_pub = rospy.Publisher('distance_to_object', Float64, queue_size=10)
+        # Create a publisher for the object detected message
+        self.object_detected_pub = rospy.Publisher('object_detected', String, queue_size=10)
 
         # Define variables for storing cluster coordinates and point numbers
         self.cluster_coordinates = []
@@ -57,8 +54,7 @@ class ObstacleDetection:
             if indices:
                 max_y_index = max(indices, key=lambda index: self.cluster_coordinates[index][1])
                 self.x_coord, self.y_coord = self.cluster_coordinates[max_y_index]
-                self.print_distance_to_object()
-                self.publish_distance()
+                self.publish_object_detected()
                     
         else:
             # Reset the count and obstacle flag
@@ -67,16 +63,13 @@ class ObstacleDetection:
             self.y_coord = 0
             self.x_coord = 0
 
-    def print_distance_to_object(self):
+    def publish_object_detected(self):
         # Calculate the distance to the detected object
         distance = np.sqrt(self.x_coord**2 + self.y_coord**2)
-        print(f"Distance to the detected object: {distance:.2f} meters")
-
-    def publish_distance(self):
-        # Calculate the distance to the detected object
-        distance = np.sqrt(self.x_coord**2 + self.y_coord**2)
-        # Publish the distance to the detected object
-        self.distance_pub.publish(distance)
+        # print(f"Distance to the detected object: {distance:.2f} meters")
+        # If the distance is less than 0.5 meters, publish the object detected message
+        if distance < 0.5:
+            self.object_detected_pub.publish("Object detected")
 
 def main():
     obstacle_detection = ObstacleDetection()

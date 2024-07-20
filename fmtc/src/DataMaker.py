@@ -66,11 +66,11 @@ class DataMaker:
             self.image = None
             self.steer_value = None
 
-    def generate_filename_img(self, base_path):
+    def generate_filename(self, base_path):
         index = 1
-        file_path = f"{base_path}/data.mp4"
+        file_path = f"{base_path}/data.pkl"
         while os.path.exists(file_path):
-            file_path = f"{base_path}/data{index}.mp4"
+            file_path = f"{base_path}/data{index}.pkl"
             index += 1
         return file_path
         
@@ -81,6 +81,42 @@ class DataMaker:
             file_path = f"{base_path}/data{index}.txt"
             index += 1
         return file_path
+
+    def save_images_to_mp4(self, image_list, output_path, fps=30):
+        """
+        Save the list of images as an MP4 video.
+
+        :param image_list: List of images
+        :param output_path: Path to save the MP4 file
+        :param fps: Frames per second for the video (default is 30)
+        """
+        if not image_list:
+            raise ValueError("The image list is empty")
+        
+        # Get the height and width of the images
+        height, width, _ = image_list[0].shape
+        
+        # Initialize the video writer
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+        
+        for image in image_list:
+            out.write(image)
+        
+        out.release()
+        rospy.loginfo(f"Video saved to {output_path}")
+        
+    def save_int_list_to_txt(self, int_list, output_path):
+        """
+        Save the list of integers to a text file.
+
+        :param int_list: List of integers
+        :param output_path: Path to save the text file
+        """
+        with open(output_path, 'w') as file:
+            for int_value in int_list:
+                file.write(f"{int_value}\n")
+        rospy.loginfo(f"Integer list saved to {output_path}")
 
     def save_images_to_mp4(self, image_list, output_path, fps=30):
         """

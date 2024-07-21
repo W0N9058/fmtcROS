@@ -105,7 +105,7 @@ void loop() {
   nh.spinOnce();
 
   // 100ms 지연
-  delay(10);
+  delay(100);
 }
 
 // MyMotorControl

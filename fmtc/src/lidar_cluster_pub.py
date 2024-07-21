@@ -157,7 +157,7 @@ class Lidar_ctrl:
         nums = np.array([dist*1000 for dist in msg.ranges])
         qualities = np.array(msg.intensities)
 
-        print(len(angles))
+        #print(len(angles))
         #print(len(nums))
         
         # 데이터 필터링 및 거리에 따른 데이터 분리

@@ -1,7 +1,12 @@
 <launch>
-  <node pkg="fmtc" type="Resnet_Pilot.py" name="Resnet" output="screen"/>
-  <node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen"/>
+
+  <node pkg="fmtc" type="Camera_input_10Hz.py" name="Camera_10Hz" output="screen"/>
+  
+  <node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen">
     <param name="port" value="/dev/ttyARDUINO"/>
     <param name="baud" value="57600"/>
-  <node pkg="fmtc" type="Camera_input_10Hz.py" name="Camera_10Hz" output="screen"/>
+  </node>
+  
+  <node pkg="fmtc" type="Resnet_Pilot.py" name="Resnet" output="screen"/>
+
 </launch>

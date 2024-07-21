@@ -4,12 +4,18 @@ import rospy
 from geometry_msgs.msg import Polygon
 from std_msgs.msg import Float64MultiArray, String
 import numpy as np
+import time
 
 class ObstacleDetection:
 
     def __init__(self):
         # Initialize the ROS node
         rospy.init_node("obstacle_detection")
+        
+        # delay
+        #delay_time = 10
+        #rospy.loginfo(f"Delaying obstacle detection start by {delay_time} seconds")
+        #time.sleep(delay_time)
 
         # Create a subscriber for the cluster coordinates and point numbers
         rospy.Subscriber('cluster_coordinate', Polygon, self.cluster_coord_callback)
@@ -41,14 +47,14 @@ class ObstacleDetection:
     def check_obstacle(self):
         # Check if the specified conditions for obstacle detection are met
         if len(self.cluster_coordinates) == len(self.cluster_point_nums):
-            obstacle_detected = any((-1 <= x <= 1 and -0.6 < y <= 0.6 and num >= 20) for (x, y), num in zip(self.cluster_coordinates, self.cluster_point_nums))
+            obstacle_detected = any((-1.5 <= x <= 2 and -0.6 < y <= 0.6 and num >= 20) for (x, y), num in zip(self.cluster_coordinates, self.cluster_point_nums))
         else:
             obstacle_detected = False
 
         if obstacle_detected:
         
             # Extract indices of elements that satisfy the obstacle_detected condition
-            indices = [index for index, value in enumerate(self.cluster_coordinates) if (-1 <= value[0] <= 1 and -0.6 < value[1] <= 0.6 and self.cluster_point_nums[index] >= 20)]
+            indices = [index for index, value in enumerate(self.cluster_coordinates) if (-1.5 <= value[0] <= 2 and -0.6 < value[1] <= 0.6 and self.cluster_point_nums[index] >= 20)]
 
             # If there are indices that satisfy the condition, find the index with the maximum y-coordinate
             if indices:
@@ -67,13 +73,14 @@ class ObstacleDetection:
         # Calculate the distance to the detected object
         distance = np.sqrt(self.x_coord**2 + self.y_coord**2)
         # print(f"Distance to the detected object: {distance:.2f} meters")
-        # If the distance is less than 0.5 meters, publish the object detected message
+        # If the distance is less than 0.8 meters, publish the object detected message
         if distance < 0.8:
-            self.object_detected_pub.publish("Object detected")
+            self.object_detected_pub.publish("Object detected") 
+           
 
 def main():
     obstacle_detection = ObstacleDetection()
-    rate = rospy.Rate(30)  # 30 Hz (adjust the rate as needed)
+    rate = rospy.Rate(30)  # 10 Hz (adjust the rate as needed)
     while not rospy.is_shutdown():
         rate.sleep()
 

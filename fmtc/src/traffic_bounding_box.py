@@ -5,6 +5,7 @@ from std_msgs.msg import String
 import cv2
 import torch
 import numpy as np
+import time
 
 def publish_traffic_light_status():
     # ROS node initialization
@@ -12,7 +13,12 @@ def publish_traffic_light_status():
     
     # Publisher setup
     traffic_light_pub = rospy.Publisher('traffic_light', String, queue_size=10)
-
+    
+    # delay
+    delay_time = 50  # 지연 시간(초)
+    rospy.loginfo(f"Delaying YOLOv5 model load by {delay_time} seconds")
+    time.sleep(delay_time)
+    
     # Load YOLOv5 model
     model = torch.hub.load('ultralytics/yolov5', 'custom', path='/home/fmtc/yolov5/runs/train/exp3/weights/best.pt')  # change 'best.pt' to your trained model file
 
@@ -93,9 +99,9 @@ def publish_traffic_light_status():
                     traffic_light_pub.publish('go')
 
         # Show result frame (optional)
-        cv2.imshow('Traffic Light Detection', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        #cv2.imshow('Traffic Light Detection', frame)
+        #if cv2.waitKey(1) & 0xFF == ord('q'):
+        #    break
 
     cap.release()
     cv2.destroyAllWindows()

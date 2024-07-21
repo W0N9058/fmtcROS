@@ -16,7 +16,8 @@ from PIL import Image as PILImage
 import cv2
 from cv_bridge import CvBridge
 
-#################################### Neural Network Definition ##############################
+
+#################################### ëª¨ë¸ ?„ ?–¸ ##############################
 
 class SimpleResidualBlock(nn.Module):
     def __init__(self):
@@ -30,28 +31,28 @@ class SimpleResidualBlock(nn.Module):
         out = self.conv1(x)
         out = self.relu1(out)
         out = self.conv2(out)
-        return self.relu2(out) + x  # ReLU applied after addition for the final output.
+        return self.relu2(out) + x # ReLU?Š” ?ž…? ¥?„ ?”?•œ ?›„ ?˜?Š” ?´? „?— ? ?š©?•  ?ˆ˜ ?žˆ?Šµ?‹ˆ?‹¤.
 
 
 class ImageRegressionBase(nn.Module):
     def training_step(self, batch):
         images, labels = batch
-        labels = labels.unsqueeze(1).float()  # Convert labels to (batch_size, 1) and float type
-        out = self(images)                   # Generate predictions
-        loss = F.mse_loss(out, labels)       # Calculate MSE loss
+        labels = labels.unsqueeze(1).float()  # ? ˆ?´ë¸”ì„ (batch_size, 1) ?˜•?ƒœë¡? ë³??™˜?•˜ê³? Float ????ž…?œ¼ë¡? ë³?ê²?
+        out = self(images)                  # ?˜ˆì¸? ?ƒ?„±
+        loss = F.mse_loss(out, labels)      # ?†?‹¤ ê³„ì‚° (?šŒê·?ë¥? ?œ„?•œ ?‰ê·? ? œê³? ?˜¤ì°?)
         return loss
 
     def validation_step(self, batch):
         images, labels = batch
-        labels = labels.unsqueeze(1).float()  # Convert labels to (batch_size, 1) and float type
-        out = self(images)                   # Generate predictions
-        loss = F.mse_loss(out, labels)       # Calculate MSE loss
+        labels = labels.unsqueeze(1).float()  # ? ˆ?´ë¸”ì„ (batch_size, 1) ?˜•?ƒœë¡? ë³??™˜?•˜ê³? Float ????ž…?œ¼ë¡? ë³?ê²?
+        out = self(images)                   # ?˜ˆì¸? ?ƒ?„±
+        loss = F.mse_loss(out, labels)       # ?†?‹¤ ê³„ì‚°
         return {"val_loss": loss.detach()}
 
     def validation_epoch_end(self, outputs):
         batch_losses = [x["val_loss"] for x in outputs]
-        epoch_loss = torch.stack(batch_losses).mean()       # Calculate average validation loss
-        return {"val_loss": epoch_loss}  # Return average validation loss
+        epoch_loss = torch.stack(batch_losses).mean()       # ?†?‹¤ ê²°í•©
+        return {"val_loss": epoch_loss} # ?†?‹¤ ê²°í•©
 
     def epoch_end(self, epoch, result):
         print("Epoch [{}], last_lr: {:.5f}, train_loss: {:.4f}, val_loss: {:.4f}".format(
@@ -72,20 +73,20 @@ class ResNet9(ImageRegressionBase):
         super().__init__()
 
         self.conv1 = ConvBlock(in_channels, 64)
-        self.conv2 = ConvBlock(64, 128, pool=True)  # out_dim : 128 x 112 x 112
+        self.conv2 = ConvBlock(64, 128, pool=True) # out_dim : 128 x 112 x 112
         self.res1 = nn.Sequential(ConvBlock(128, 128), ConvBlock(128, 128))
 
-        self.conv3 = ConvBlock(128, 256, pool=True)  # out_dim : 256 x 56 x 56
-        self.conv4 = ConvBlock(256, 512, pool=True)  # out_dim : 512 x 28 x 28
+        self.conv3 = ConvBlock(128, 256, pool=True) # out_dim : 256 x 56 x 56
+        self.conv4 = ConvBlock(256, 512, pool=True) # out_dim : 512 x 28 x 28
         self.res2 = nn.Sequential(ConvBlock(512, 512), ConvBlock(512, 512))
 
         self.classifier = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),  # Global average pooling to 1x1
+            nn.AdaptiveAvgPool2d(1), # ?”¼ì²? ë§? ?¬ê¸°ë?? 1x1ë¡? ì¡°ì •
             nn.Flatten(),
-            nn.Linear(512, 1)  # Single output for regression
+            nn.Linear(512, 1)  # ?•˜?‚˜?˜ ?‹¤?ˆ˜ê°’ì„ ?˜ˆì¸?
         )
 
-    def forward(self, xb):  # xb is the input batch
+    def forward(self, xb): # xb?Š” ë¡œë“œ?œ ë°°ì¹˜
         out = self.conv1(xb)
         out = self.conv2(out)
         out = self.res1(out) + out
@@ -144,6 +145,9 @@ def perspectiveWarp(inputImage):
     minv = cv2.getPerspectiveTransform(dst, src)
     birdseye = cv2.warpPerspective(inputImage, matrix, img_size)
 
+    # Display birdseye view image
+    # cv2.imshow("Birdseye" , birdseye)
+
     return birdseye, minv
 
 def processImage(inputImage):
@@ -172,19 +176,20 @@ class Resnet_Pilot:
         self.stage = ['waiting_first', 'waiting_stop', 'waiting_go']
         self.current_stage = self.stage[0]
         
-        self.forward = 0.7
+        self.forward = 0.5
         self.backward = 1.0
         self.angle = 0.0
-        self.override_control = False
+
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model = ResNet9(in_channels=3).to(self.device)
-        self.model_load_path = '/home/fmtc/catkin_ws/model.pth'
+        self.model = ResNet9(in_channels=1).to(self.device)
+        self.model_load_path = '/home/fmtc/catkin_ws/model_20240720_184349.pth'
         self.load_model()
 
         self.transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            transforms.Grayscale(num_output_channels=1)
+            # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
         
     
@@ -198,24 +203,20 @@ class Resnet_Pilot:
 
     def traffic_light_callback(self, msg):
         rospy.loginfo(f"Received traffic light data: {msg.data}")
-        self.override_control = True
         if self.current_stage == 'waiting_stop' and msg.data == 'stop':
             self.forward = 1.0
             self.current_stage = 'waiting_go'
         elif self.current_stage == 'waiting_go' and msg.data == 'go':
-            self.forward = 0.7  # Update forward speed for moving straight
-        #self.PublishControlInput()
-            self.override_control = False
+            self.forward = 0.0  # ?Š¹? • ê°’ìœ¼ë¡? ?„¤? •?•˜?—¬ ì§ì§„
+        self.PublishControlInput()
 
     def object_detected_callback(self, msg):
         rospy.loginfo(f"Received object detected data: {msg.data}")
-        self.override_control = True
         if msg.data == "Object detected":
             if self.current_stage == 'waiting_first':
                 self.move_to_first_lane()
                 self.current_stage = 'waiting_stop'
         self.PublishControlInput()
-        self.override_control = False
 
     def timed_publish(self, angle, duration):
         self.angle = angle
@@ -225,36 +226,43 @@ class Resnet_Pilot:
             rospy.sleep(0.1)
 
     def move_to_first_lane(self):
-        self.timed_publish(1.0, 3.0)  # Turn left for 2 seconds
-        self.timed_publish(-1.0, 3.0)  # Turn right for 2.5 seconds
-        self.timed_publish(0.0, 1.0)  # Go straight for 3 seconds
-        self.timed_publish(-1.0, 3.5)  # Turn right for 2.5 seconds
-        self.timed_publish(1.0, 3.5)  # Turn left for 2 seconds
-        self.timed_publish(0.0, 0.1)  # Go straight for 0.1 seconds
+        self.timed_publish(1.0, 2.0)  # ?™¼ìª½ìœ¼ë¡? 2ì´ˆê°„ ì¡°í–¥
+        self.timed_publish(-1.0, 2.0)  # ?˜¤ë¥¸ìª½?œ¼ë¡? 2ì´ˆê°„ ì¡°í–¥
+        self.timed_publish(0.0, 3.0)  # ì§ì§„ 3ì´?
+        self.timed_publish(-1.0, 2.0)  # ?˜¤ë¥¸ìª½?œ¼ë¡? 2ì´ˆê°„ ì¡°í–¥
+        self.timed_publish(1.0, 2.0)  # ?™¼ìª½ìœ¼ë¡? 2ì´ˆê°„ ì¡°í–¥
+        self.timed_publish(0.0, 0.1)  # ì§ì§„ 0.1ì´?
     
     def PublishControlInput(self):
         msg = Float32MultiArray()
         msg.data = [self.forward, self.backward, self.angle]
         self.pub.publish(msg)
 
-    def ModelWork(self, event):
-        if self.image is not None and not self.override_control:
-            image_rgb = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
-            pil_image = PILImage.fromarray(image_rgb)
+    def ModelWork(self):
+        if self.image is not None:
+            image_calibrated = Calibrate(self.image)
+            image_birdseye, _ = perspectiveWarp(image_calibrated)
+            image_transformed = processImage(image_birdseye)
+            pil_image = PILImage.fromarray(image_transformed)
             image_tensor = self.transform(pil_image).unsqueeze(0).to(self.device)
 
             with torch.no_grad():
                 pred = self.model(image_tensor)
-                #if pred.item() > 482.5:
-                #    self.angle = (pred.item()-482.5)*2/735
-                #else:
-                #    self.angle = (pred.item()-482.5)*2/(735*0.8)
-                self.angle = (pred.item()-482.5)*2/735 
+                self.angle = pred.item()
                 self.PublishControlInput()
 
 if __name__ == "__main__":
     rospy.init_node('resnet_pilot')
     pilot = Resnet_Pilot()
-    rospy.Timer(rospy.Duration(0.1), pilot.ModelWork)  # Call ModelWork at 10Hz
+    pilot.ModelWork()
     rospy.spin()
 
+#if __name__ == '__main__':
+#    rospy.init_node('Resnet_Pilot', anonymous=True)
+#    rate = rospy.Rate(100)
+#    Pilot = Resnet_Pilot()
+    
+#    while not rospy.is_shutdown():
+#        Pilot.ModelWork()
+#        Pilot.PublishControlInput()
+#        rate.sleep()
